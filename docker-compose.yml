@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Banco de Dados Relacional PostgreSQL (Produção)
+  db:
+    image: postgres:16-alpine
+    container_name: senac_techlab_db
+    restart: always
+    environment:
+      POSTGRES_USER: senac_admin
+      POSTGRES_PASSWORD: senac_secret_password
+      POSTGRES_DB: senac_assets
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # Back-end FastAPI
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: senac_techlab_backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql+asyncpg://senac_admin:senac_secret_password@db:5432/senac_assets
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  # Front-end React + Vite / Nginx
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: senac_techlab_frontend
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
